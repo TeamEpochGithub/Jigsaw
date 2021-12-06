@@ -11,6 +11,7 @@ tqdm = "*"
 sklearn = "*"
 transformers = "*"
 colorama = "*"
+pre-commit = "*"
 
 [dev-packages]
 
