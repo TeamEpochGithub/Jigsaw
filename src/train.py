@@ -13,8 +13,8 @@ from torch.utils.data import DataLoader
 
 from tqdm import tqdm
 
-from src.validation import criterion
-from src.data_loader import JigsawDataset
+from validation import criterion
+from data_loader import JigsawDataset
 
 # For colored terminal text
 from colorama import Fore, Back, Style

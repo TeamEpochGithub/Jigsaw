@@ -3,9 +3,9 @@ import os
 
 from transformers import AdamW
 
-from src.data_loader import Data
-from src.config import Config
-from src.model import JigsawModel
+from data_loader import Data
+from config import Config
+from model import JigsawModel
 
 from train import run_training, prepare_loaders, fetch_scheduler
 
