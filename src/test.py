@@ -4,7 +4,7 @@ import torch
 
 from tqdm import tqdm
 
-from validation import criterion
+from src.validation import criterion
 
 @torch.no_grad()
 def valid_one_epoch(model, dataloader, device, epoch, config, optimizer):

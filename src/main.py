@@ -3,13 +3,13 @@ import os
 
 from transformers import AdamW
 
-from data_loader import Data
-from config import Config
-from model import JigsawModel
+from src.data_loader import Data
+from src.config import Config
+from src.model import JigsawModel
 
 from train import run_training, prepare_loaders, fetch_scheduler
 
-DATA_PATH = "../data/jigsaw-toxic-severity-rating/validation_data.csv"
+DATA_PATH = "./data/jigsaw-toxic-severity-rating/validation_data.csv"
 CONFIG = Config().config
 
 # For colored terminal text
