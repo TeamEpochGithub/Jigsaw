@@ -12,6 +12,10 @@ sklearn = "*"
 transformers = "*"
 colorama = "*"
 pre-commit = "*"
+matplotlib = "*"
+wordcloud = "*"
+plotly = "*"
+seaborn = "*"
 
 [dev-packages]
 

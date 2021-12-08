@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 
 from tqdm import tqdm
 
+from test import valid_one_epoch
 from validation import criterion
 from data_loader import JigsawDataset
 
