@@ -41,15 +41,15 @@ with __stickytape_temporary_dir() as __stickytape_working_dir:
 
     __stickytape_write_module(
         "data.py",
-        b"import torch\nfrom torch.utils.data import Dataset\n\nclass JigsawDataset(Dataset):\n    def __init__(self, df, tokenizer, max_length):\n        self.df = df\n        self.max_len = max_length\n        self.tokenizer = tokenizer\n        self.text = df['text'].values\n        \n    def __len__(self):\n        return len(self.df)\n    \n    def __getitem__(self, index):\n        text = self.text[index]\n        inputs = self.tokenizer.encode_plus(\n                        text,\n                        truncation=True,\n                        add_special_tokens=True,\n                        max_length=self.max_len,\n                        padding='max_length'\n                    )\n        \n        ids = inputs['input_ids']\n        mask = inputs['attention_mask']        \n        \n        return {\n            'ids': torch.tensor(ids, dtype=torch.long),\n            'mask': torch.tensor(mask, dtype=torch.long)\n        }\n",
+        b'import torch\nfrom torch.utils.data import Dataset\n\n\nclass JigsawDataset(Dataset):\n    def __init__(self, df, tokenizer, max_length):\n        self.df = df\n        self.max_len = max_length\n        self.tokenizer = tokenizer\n        self.text = df["text"].values\n\n    def __len__(self):\n        return len(self.df)\n\n    def __getitem__(self, index):\n        text = self.text[index]\n        inputs = self.tokenizer.encode_plus(\n            text,\n            truncation=True,\n            add_special_tokens=True,\n            max_length=self.max_len,\n            padding="max_length",\n        )\n\n        ids = inputs["input_ids"]\n        mask = inputs["attention_mask"]\n\n        return {\n            "ids": torch.tensor(ids, dtype=torch.long),\n            "mask": torch.tensor(mask, dtype=torch.long),\n        }\n',
     )
     __stickytape_write_module(
         "model.py",
-        b"import torch.nn as nn\n\nfrom transformers import AutoModel\n\nclass JigsawModel(nn.Module):\n    def __init__(self, model_name, config):\n        super(JigsawModel, self).__init__()\n        self.model = AutoModel.from_pretrained(model_name)\n        self.drop = nn.Dropout(p=0.2)\n        self.fc = nn.Linear(768, config['num_classes'])\n        \n    def forward(self, ids, mask):        \n        out = self.model(input_ids=ids,attention_mask=mask,\n                         output_hidden_states=False)\n        out = self.drop(out[1])\n        outputs = self.fc(out)\n        return outputs\n",
+        b'import torch.nn as nn\n\nfrom transformers import AutoModel\n\n\nclass JigsawModel(nn.Module):\n    def __init__(self, model_name, config):\n        super(JigsawModel, self).__init__()\n        self.model = AutoModel.from_pretrained(model_name)\n        self.drop = nn.Dropout(p=0.2)\n        self.fc = nn.Linear(768, config["num_classes"])\n\n    def forward(self, ids, mask):\n        out = self.model(input_ids=ids, attention_mask=mask, output_hidden_states=False)\n        out = self.drop(out[1])\n        outputs = self.fc(out)\n        return outputs\n',
     )
     __stickytape_write_module(
         "config.py",
-        b'from transformers import AutoTokenizer\nimport torch\n\nCONFIG = dict(\n    seed = 42,\n    model_name = \'../input/roberta-base\',\n    test_batch_size = 64,\n    max_length = 128,\n    num_classes = 1,\n    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")\n)\n\nCONFIG["tokenizer"] = AutoTokenizer.from_pretrained(CONFIG[\'model_name\'])\n',
+        b'from transformers import AutoTokenizer\nimport torch\n\nCONFIG = dict(\n    seed=42,\n    model_name="../input/roberta-base",\n    test_batch_size=64,\n    max_length=128,\n    num_classes=1,\n    device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),\n)\n\nCONFIG["tokenizer"] = AutoTokenizer.from_pretrained(CONFIG["model_name"])\n',
     )
     import os
     import gc
@@ -69,11 +69,11 @@ with __stickytape_temporary_dir() as __stickytape_working_dir:
     os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
     MODEL_PATHS = [
-        "../input/pytorch-w-b-jigsaw-starter/Loss-Fold-0.bin",
-        "../input/pytorch-w-b-jigsaw-starter/Loss-Fold-1.bin",
-        "../input/pytorch-w-b-jigsaw-starter/Loss-Fold-2.bin",
-        "../input/pytorch-w-b-jigsaw-starter/Loss-Fold-3.bin",
-        "../input/pytorch-w-b-jigsaw-starter/Loss-Fold-4.bin",
+        "../input/pytorch-jigsaw-starter/Loss-Fold-0.bin",
+        "../input/pytorch-jigsaw-starter/Loss-Fold-1.bin",
+        "../input/pytorch-jigsaw-starter/Loss-Fold-2.bin",
+        "../input/pytorch-jigsaw-starter/Loss-Fold-3.bin",
+        "../input/pytorch-jigsaw-starter/Loss-Fold-4.bin",
     ]
 
     DATA_PATH = "../input/jigsaw-toxic-severity-rating/comments_to_score.csv"
