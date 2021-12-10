@@ -16,11 +16,11 @@ import config
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 MODEL_PATHS = [
-    "../input/pytorch-w-b-jigsaw-starter/Loss-Fold-0.bin",
-    "../input/pytorch-w-b-jigsaw-starter/Loss-Fold-1.bin",
-    "../input/pytorch-w-b-jigsaw-starter/Loss-Fold-2.bin",
-    "../input/pytorch-w-b-jigsaw-starter/Loss-Fold-3.bin",
-    "../input/pytorch-w-b-jigsaw-starter/Loss-Fold-4.bin",
+    "../input/pytorch-jigsaw-starter/Loss-Fold-0.bin",
+    "../input/pytorch-jigsaw-starter/Loss-Fold-1.bin",
+    "../input/pytorch-jigsaw-starter/Loss-Fold-2.bin",
+    "../input/pytorch-jigsaw-starter/Loss-Fold-3.bin",
+    "../input/pytorch-jigsaw-starter/Loss-Fold-4.bin",
 ]
 
 DATA_PATH = "../input/jigsaw-toxic-severity-rating/comments_to_score.csv"
