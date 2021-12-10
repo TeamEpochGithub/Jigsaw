@@ -136,4 +136,4 @@ def show_two_word_distributions(target_df1, target_column_name1, target_df2, tar
 if __name__ == '__main__':
     print("Running data analysis")
     # insert here what plotting needs to be done
-    print("Finished running data analaysis")
+    print("Finished running data analysis")
