@@ -9,7 +9,7 @@ from model import JigsawModel
 
 from train import run_training, prepare_loaders, fetch_scheduler
 
-DATA_PATH = "./data/jigsaw-toxic-severity-rating/validation_data.csv"
+DATA_PATH = "../input/jigsaw-toxic-severity-rating/validation_data.csv"
 CONFIG = Config().config
 
 # For colored terminal text
