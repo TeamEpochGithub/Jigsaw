@@ -26,34 +26,29 @@ def set_seed(seed=42):
     os.environ["PYTHONHASHSEED"] = str(seed)
 
 
-class Config:
-    def __init__(self):
+HASH_NAME = id_generator(size=12)
 
-        HASH_NAME = id_generator(size=12)
+CONFIG = {
+    "seed": 2021,
+    "epochs": 3,
+    "model_name": "roberta-base",
+    "train_batch_size": 32,
+    "valid_batch_size": 64,
+    "max_length": 128,
+    "learning_rate": 1e-4,
+    "scheduler": "CosineAnnealingLR",
+    "min_lr": 1e-6,
+    "T_max": 500,
+    "weight_decay": 1e-6,
+    "n_fold": 5,
+    "n_accumulate": 1,
+    "num_classes": 1,
+    "margin": 0.5,
+    "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+    "hash_name": HASH_NAME,
+}
 
-        config = {
-            "seed": 2021,
-            "epochs": 3,
-            "model_name": "roberta-base",
-            "train_batch_size": 32,
-            "valid_batch_size": 64,
-            "max_length": 128,
-            "learning_rate": 1e-4,
-            "scheduler": "CosineAnnealingLR",
-            "min_lr": 1e-6,
-            "T_max": 500,
-            "weight_decay": 1e-6,
-            "n_fold": 5,
-            "n_accumulate": 1,
-            "num_classes": 1,
-            "margin": 0.5,
-            "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
-            "hash_name": HASH_NAME,
-        }
+CONFIG["tokenizer"] = AutoTokenizer.from_pretrained(CONFIG["model_name"])
+CONFIG["group"] = f"{HASH_NAME}-Baseline"
 
-        config["tokenizer"] = AutoTokenizer.from_pretrained(config["model_name"])
-        config["group"] = f"{HASH_NAME}-Baseline"
-
-        set_seed(config["seed"])
-
-        self.config = config
+set_seed(CONFIG["seed"])
