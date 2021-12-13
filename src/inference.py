@@ -49,7 +49,7 @@ with __stickytape_temporary_dir() as __stickytape_working_dir:
     )
     __stickytape_write_module(
         "config.py",
-        b'from transformers import AutoTokenizer\nimport torch\n\nCONFIG = dict(\n    seed=42,\n    model_name="../input/roberta-base",\n    test_batch_size=64,\n    max_length=128,\n    num_classes=1,\n    device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),\n)\n\nCONFIG["tokenizer"] = AutoTokenizer.from_pretrained(CONFIG["model_name"])\n',
+        b"import random\nimport os\n\nimport numpy as np\n\nfrom transformers import AutoTokenizer\nimport torch\n\ndef set_seed(seed = 42):\n    '''Sets the seed of the entire notebook so results are the same every time we run.\n    This is for REPRODUCIBILITY.'''\n    np.random.seed(seed)\n    random.seed(seed)\n    torch.manual_seed(seed)\n    torch.cuda.manual_seed(seed)\n    # When running on the CuDNN backend, two further options must be set\n    torch.backends.cudnn.deterministic = True\n    torch.backends.cudnn.benchmark = False\n    # Set a fixed value for the hash seed\n    os.environ['PYTHONHASHSEED'] = str(seed)\n    \nCONFIG = dict(\n    seed=42,\n    model_name=\"../input/roberta-base\",\n    test_batch_size=64,\n    max_length=128,\n    num_classes=1,\n    device=torch.device(\"cuda:0\" if torch.cuda.is_available() else \"cpu\"),\n)\n\nset_seed(CONFIG['seed'])\n\nCONFIG[\"tokenizer\"] = AutoTokenizer.from_pretrained(CONFIG[\"model_name\"])\n",
     )
     import os
     import gc

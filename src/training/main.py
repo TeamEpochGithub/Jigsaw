@@ -4,7 +4,7 @@ import os
 from transformers import AdamW
 
 from data_loader import Data
-from config import CONFIG
+from config import CONFIG, HASH_NAME
 from model import JigsawModel
 
 from train import run_training, prepare_loaders, fetch_scheduler
@@ -26,6 +26,18 @@ warnings.filterwarnings("ignore")
 # For descriptive error messages
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
+
+# *** Weights and Biases Setup ***
+import wandb
+
+try:
+    api_key = os.environ["WANDB_API"]
+    wandb.login(key=api_key)
+    anony = None
+except:
+    anony = "must"
+    print("Unable to load Weight's and Biases")
+
 df = Data(DATA_PATH, CONFIG).df
 
 
@@ -33,13 +45,15 @@ def main():
 
     for fold in range(0, CONFIG["n_fold"]):
         print(f"{y_}====== Fold: {fold} ======{sr_}")
-        # run = wandb.init(project='Jigsaw',
-        #                 config=CONFIG,
-        #                 job_type='Train',
-        #                 group=CONFIG['group'],
-        #                 tags=['roberta-base', f'{HASH_NAME}', 'margin-loss'],
-        #                 name=f'{HASH_NAME}-fold-{fold}',
-        #                 anonymous='must')
+        run = wandb.init(
+            project="Jigsaw",
+            config=CONFIG,
+            job_type="Train",
+            group=CONFIG["group"],
+            tags=["roberta-base", f"{HASH_NAME}", "margin-loss"],
+            name=f"{HASH_NAME}-fold-{fold}",
+            anonymous="must",
+        )
 
         # Create Dataloaders
         train_loader, valid_loader = prepare_loaders(fold=fold, config=CONFIG, df=df)
@@ -65,9 +79,11 @@ def main():
             config=CONFIG,
             train_loader=train_loader,
             valid_loader=valid_loader,
+            wandb=wandb,
+            run=run,
         )
 
-        # run.finish()
+        run.finish()
 
         del model, history, train_loader, valid_loader
         _ = gc.collect()

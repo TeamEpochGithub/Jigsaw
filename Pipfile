@@ -12,6 +12,7 @@ sklearn = "*"
 transformers = "*"
 colorama = "*"
 pre-commit = "*"
+wandb = "*"
 
 [dev-packages]
 

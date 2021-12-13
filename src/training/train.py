@@ -125,9 +125,11 @@ def run_training(
     config,
     train_loader,
     valid_loader,
+    wandb,
+    run,
 ):
     # To automatically log gradients
-    # wandb.watch(model, log_freq=100)
+    wandb.watch(model, log_freq=100)
 
     if torch.cuda.is_available():
         print("[INFO] Using GPU: {}\n".format(torch.cuda.get_device_name()))
@@ -162,8 +164,8 @@ def run_training(
         history["Valid Loss"].append(val_epoch_loss)
 
         # Log the metrics
-        # wandb.log({"Train Loss": train_epoch_loss})
-        # wandb.log({"Valid Loss": val_epoch_loss})
+        wandb.log({"Train Loss": train_epoch_loss})
+        wandb.log({"Valid Loss": val_epoch_loss})
 
         # deep copy the model
         if val_epoch_loss <= best_epoch_loss:
@@ -171,7 +173,7 @@ def run_training(
                 f"{b_}Validation Loss Improved ({best_epoch_loss} ---> {val_epoch_loss})"
             )
             best_epoch_loss = val_epoch_loss
-            # run.summary["Best Loss"] = best_epoch_loss
+            run.summary["Best Loss"] = best_epoch_loss
             best_model_wts = copy.deepcopy(model.state_dict())
             PATH = f"Loss-Fold-{fold}.bin"
             torch.save(model.state_dict(), PATH)
