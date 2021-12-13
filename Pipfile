@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 torch = "*"
 numpy = "*"
+nltk = "*"
 pandas = "*"
 tqdm = "*"
 sklearn = "*"
