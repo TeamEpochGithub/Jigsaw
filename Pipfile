@@ -13,6 +13,7 @@ transformers = "*"
 colorama = "*"
 pre-commit = "*"
 wandb = "*"
+stickytape = "*"
 
 [dev-packages]
 
