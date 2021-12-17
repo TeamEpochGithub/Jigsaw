@@ -5,26 +5,25 @@ from torch.utils.data import Dataset
 from sklearn.model_selection import StratifiedKFold
 
 
-class Data:
-    def __init__(self, path, config):
-        df = pd.read_csv(path)
-        df.head()
+def get_df(path, config):
+    df = pd.read_csv(path)
+    df.head()
 
-        skf = StratifiedKFold(
-            n_splits=config["n_fold"], shuffle=True, random_state=config["seed"]
-        )
+    skf = StratifiedKFold(
+        n_splits=config["n_fold"], shuffle=True, random_state=config["seed"]
+    )
 
-        for fold, (_, val_) in enumerate(skf.split(X=df, y=df.worker)):
-            df.loc[val_, "kfold"] = int(fold)
+    for fold, (_, val_) in enumerate(skf.split(X=df, y=df.worker)):
+        df.loc[val_, "kfold"] = int(fold)
 
-        df["kfold"] = df["kfold"].astype(int)
-        df.head()
+    df["kfold"] = df["kfold"].astype(int)
+    df.head()
 
-        self.df = df
+    return df
 
 
 class JigsawDataset(Dataset):
-    def __init__(self, df, tokenizer, max_length, config):
+    def __init__(self, df, tokenizer, max_length):
         self.df = df
         self.max_len = max_length
         self.tokenizer = tokenizer
