@@ -11,7 +11,8 @@ from tqdm import tqdm
 
 from data import JigsawDataset
 from model import JigsawModel
-import config
+from config import CONFIG
+from typing import List
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
@@ -24,8 +25,6 @@ MODEL_PATHS = [
 ]
 
 DATA_PATH = "../input/jigsaw-toxic-severity-rating/comments_to_score.csv"
-
-CONFIG = config.CONFIG
 
 df = pd.read_csv(DATA_PATH)
 
@@ -40,13 +39,9 @@ test_loader = DataLoader(
 
 
 @torch.no_grad()
-def valid_fn(model, dataloader, device):
+def predict(model: torch.nn.Module, dataloader, device):
     model.eval()
-
-    dataset_size = 0
-    running_loss = 0.0
-
-    PREDS = []
+    preds = []
 
     bar = tqdm(enumerate(dataloader), total=len(dataloader))
     for _, data in bar:
@@ -54,23 +49,30 @@ def valid_fn(model, dataloader, device):
         mask = data["mask"].to(device, dtype=torch.long)
 
         outputs = model(ids, mask)
-        PREDS.append(outputs.view(-1).cpu().detach().numpy())
+        preds.append(outputs.view(-1).cpu().detach().numpy())
 
-    PREDS = np.concatenate(PREDS)
+    preds = np.concatenate(preds)
     gc.collect()
 
-    return PREDS
+    return preds
 
 
-def inference(model_paths, dataloader, device):
+def inference(model_paths: List[str], dataloader: torch.utils.data.DataLoader, device):
+    """
+    goes through model checkpoints and evaluates all comments on each
+    :param model_paths: list of model paths
+    :param dataloader:
+    :param device:
+    :return: predictions as np array
+    """
     final_preds = []
     for i, path in enumerate(model_paths):
-        model = JigsawModel(CONFIG["model_name"], CONFIG)
+        model = JigsawModel(CONFIG["model_name"])
         model.to(CONFIG["device"])
         model.load_state_dict(torch.load(path))
 
         print(f"Getting predictions for model {i+1}")
-        preds = valid_fn(model, dataloader, device)
+        preds = predict(model, dataloader, device)
         final_preds.append(preds)
 
     final_preds = np.array(final_preds)

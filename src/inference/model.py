@@ -1,16 +1,18 @@
+import torch
 import torch.nn as nn
 
 from transformers import AutoModel
+from config import CONFIG
 
 
 class JigsawModel(nn.Module):
-    def __init__(self, model_name, config):
+    def __init__(self, model_name: str):
         super(JigsawModel, self).__init__()
         self.model = AutoModel.from_pretrained(model_name)
         self.drop = nn.Dropout(p=0.2)
-        self.fc = nn.Linear(768, config["num_classes"])
+        self.fc = nn.Linear(768, CONFIG["num_classes"])
 
-    def forward(self, ids, mask):
+    def forward(self, ids: torch.Tensor, mask: torch.Tensor):
         out = self.model(input_ids=ids, attention_mask=mask, output_hidden_states=False)
         out = self.drop(out[1])
         outputs = self.fc(out)
