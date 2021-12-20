@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 
 from tqdm import tqdm
 
-from src.training.model import JigsawModel
+from model import JigsawModel
 from data import JigsawDataset
 from config import CONFIG
 from typing import List
@@ -68,9 +68,12 @@ def inference(model_paths: List[str], dataloader: torch.utils.data.DataLoader, d
     final_predictions = []
     for i, path in enumerate(model_paths):
         # initialize model
-        model = JigsawModel(CONFIG["model_name"])
+        model = JigsawModel(CONFIG["model_name"], CONFIG)
         model.to(CONFIG["device"])
-        model.load_state_dict(torch.load(path))
+        if torch.cuda.is_available():
+            model.load_state_dict(torch.load(path))
+        else:
+            model.load_state_dict(torch.load(path, map_location=torch.device("cpu")))
 
         print(f"Getting predictions for model {i+1}")
         preds = predict(model, dataloader, device)
