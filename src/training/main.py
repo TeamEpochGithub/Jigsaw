@@ -26,7 +26,6 @@ warnings.filterwarnings("ignore")
 # For descriptive error messages
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
-
 # *** Weights and Biases Setup ***
 import wandb
 
@@ -38,13 +37,18 @@ except:
     anony = "must"
     print("Unable to load Weight's and Biases")
 
+# Load and split the data
 df = get_df(DATA_PATH, CONFIG)
 
 
 def main():
 
+    # Main trainig loop
     for fold in range(0, CONFIG["n_fold"]):
+
         print(f"{y_}====== Fold: {fold} ======{sr_}")
+
+        # Inform Weights & Biases that this is one iteration
         run = wandb.init(
             project="Jigsaw",
             config=CONFIG,
@@ -55,6 +59,7 @@ def main():
             anonymous="must",
         )
 
+        # Instantiate the model and transfer it to [DEVICE] (e.g. GPU)
         model = JigsawModel(CONFIG["model_name"], CONFIG["num_classes"])
         model.to(CONFIG["device"])
 
@@ -72,6 +77,7 @@ def main():
         )
         scheduler = trainer.fetch_scheduler(optimizer)
 
+        # Run the training
         model, history = trainer.run_training(
             optimizer,
             scheduler,
@@ -84,6 +90,8 @@ def main():
         run.finish()
 
         del model, history, train_loader, valid_loader
+
+        # Force python garbage collection to free unused memory and avoid leaks
         _ = gc.collect()
         print()
 
