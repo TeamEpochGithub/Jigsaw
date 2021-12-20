@@ -6,13 +6,19 @@ from sklearn.model_selection import StratifiedKFold
 
 
 def get_df(path, config):
+    """
+        Get the data from a given path
+    """
+    # Read data from file
     df = pd.read_csv(path)
     df.head()
 
+    # Create multiple data folds based on config
     skf = StratifiedKFold(
         n_splits=config["n_fold"], shuffle=True, random_state=config["seed"]
     )
 
+    # Add the fold id to each row
     for fold, (_, val_) in enumerate(skf.split(X=df, y=df.worker)):
         df.loc[val_, "kfold"] = int(fold)
 
@@ -23,6 +29,10 @@ def get_df(path, config):
 
 
 class JigsawDataset(Dataset):
+    """
+        A wrapper around the pandas dataframe containing the data
+    """
+
     def __init__(self, df, tokenizer, max_length):
         self.df = df
         self.max_len = max_length

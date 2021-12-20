@@ -42,6 +42,9 @@ df = get_df(DATA_PATH, CONFIG)
 
 
 def main():
+    """
+        Setup and execute training of the model
+    """
 
     # Main trainig loop
     for fold in range(0, CONFIG["n_fold"]):
