@@ -3,6 +3,10 @@ from torch.utils.data import Dataset
 
 
 class JigsawDataset(Dataset):
+    """
+    A class to be passed to a dataloader.
+    """
+
     def __init__(self, df, tokenizer, max_length):
         self.df = df
         self.max_len = max_length
@@ -22,7 +26,9 @@ class JigsawDataset(Dataset):
             padding="max_length",
         )
 
+        # tokens, extracted from sentences
         ids = inputs["input_ids"]
+        # same length as tokens, 1 if the token is actual, 0 if it is a placeholder to fill max_length
         mask = inputs["attention_mask"]
 
         return {
