@@ -5,26 +5,35 @@ from torch.utils.data import Dataset
 from sklearn.model_selection import StratifiedKFold
 
 
-class Data:
-    def __init__(self, path, config):
-        df = pd.read_csv(path)
-        df.head()
+def get_df(path, config):
+    """
+        Get the data from a given path
+    """
+    # Read data from file
+    df = pd.read_csv(path)
+    df.head()
 
-        skf = StratifiedKFold(
-            n_splits=config["n_fold"], shuffle=True, random_state=config["seed"]
-        )
+    # Create multiple data folds based on config
+    skf = StratifiedKFold(
+        n_splits=config["n_fold"], shuffle=True, random_state=config["seed"]
+    )
 
-        for fold, (_, val_) in enumerate(skf.split(X=df, y=df.worker)):
-            df.loc[val_, "kfold"] = int(fold)
+    # Add the fold id to each row
+    for fold, (_, val_) in enumerate(skf.split(X=df, y=df.worker)):
+        df.loc[val_, "kfold"] = int(fold)
 
-        df["kfold"] = df["kfold"].astype(int)
-        df.head()
+    df["kfold"] = df["kfold"].astype(int)
+    df.head()
 
-        self.df = df
+    return df
 
 
 class JigsawDataset(Dataset):
-    def __init__(self, df, tokenizer, max_length, config):
+    """
+        A wrapper around the pandas dataframe containing the data
+    """
+
+    def __init__(self, df, tokenizer, max_length):
         self.df = df
         self.max_len = max_length
         self.tokenizer = tokenizer

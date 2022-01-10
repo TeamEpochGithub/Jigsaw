@@ -3,11 +3,11 @@ import os
 
 from transformers import AdamW
 
-from data_loader import Data
+from data_loader import get_df
 from config import CONFIG, HASH_NAME
 from model import JigsawModel
 
-from train import run_training, prepare_loaders, fetch_scheduler
+from train import JigsawTrainer
 
 DATA_PATH = "../input/jigsaw-toxic-severity-rating/validation_data.csv"
 
@@ -26,7 +26,6 @@ warnings.filterwarnings("ignore")
 # For descriptive error messages
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
-
 # *** Weights and Biases Setup ***
 import wandb
 
@@ -38,13 +37,21 @@ except:
     anony = "must"
     print("Unable to load Weight's and Biases")
 
-df = Data(DATA_PATH, CONFIG).df
+# Load and split the data
+df = get_df(DATA_PATH, CONFIG)
 
 
 def main():
+    """
+        Setup and execute training of the model
+    """
 
+    # Main trainig loop
     for fold in range(0, CONFIG["n_fold"]):
+
         print(f"{y_}====== Fold: {fold} ======{sr_}")
+
+        # Inform Weights & Biases that this is one iteration
         run = wandb.init(
             project="Jigsaw",
             config=CONFIG,
@@ -55,11 +62,15 @@ def main():
             anonymous="must",
         )
 
-        # Create Dataloaders
-        train_loader, valid_loader = prepare_loaders(fold=fold, config=CONFIG, df=df)
-
-        model = JigsawModel(CONFIG["model_name"], CONFIG)
+        # Instantiate the model and transfer it to [DEVICE] (e.g. GPU)
+        model = JigsawModel(CONFIG["model_name"], CONFIG["num_classes"])
         model.to(CONFIG["device"])
+
+        # Create trainer instance
+        trainer = JigsawTrainer(model, CONFIG, wandb, run, df)
+
+        # Create Dataloaders
+        train_loader, valid_loader = trainer.prepare_loaders(fold)
 
         # Define Optimizer and Scheduler
         optimizer = AdamW(
@@ -67,25 +78,23 @@ def main():
             lr=CONFIG["learning_rate"],
             weight_decay=CONFIG["weight_decay"],
         )
-        scheduler = fetch_scheduler(optimizer, CONFIG)
+        scheduler = trainer.fetch_scheduler(optimizer)
 
-        model, history = run_training(
-            model,
+        # Run the training
+        model, history = trainer.run_training(
             optimizer,
             scheduler,
-            device=CONFIG["device"],
             num_epochs=CONFIG["epochs"],
             fold=fold,
-            config=CONFIG,
             train_loader=train_loader,
             valid_loader=valid_loader,
-            wandb=wandb,
-            run=run,
         )
 
         run.finish()
 
         del model, history, train_loader, valid_loader
+
+        # Force python garbage collection to free unused memory and avoid leaks
         _ = gc.collect()
         print()
 
