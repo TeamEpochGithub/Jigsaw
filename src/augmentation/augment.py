@@ -19,10 +19,6 @@ args = ap.parse_args()
 output = None
 if args.output:
     output = args.output
-else:
-    from os.path import dirname, basename, join
-
-    output = join(dirname(args.input), 'eda_' + basename(args.input))
 
 # number of augmented sentences to generate per original sentence
 num_aug = 9  # default
@@ -55,21 +51,32 @@ if alpha_sr == alpha_ri == alpha_rs == alpha_rd == 0:
 
 # generate more data with standard augmentation
 def gen_eda(train_orig, output_file, alpha_sr, alpha_ri, alpha_rs, alpha_rd, num_aug=9):
+    if output_file is None:
+        output_file = "input/jigsaw-toxic-severity-rating/augmented/" \
+                      f"{int(alpha_sr * 10)}{int(alpha_ri * 10)}{int(alpha_rs * 10)}{int(alpha_rd * 10)}-{num_aug}.csv"
     writer = open(output_file, 'w', encoding='utf8')
-    writer.write("comment_id,text\n")
+    writer.write("worker,less_toxic,more_toxic\n")
     df = pd.read_csv(train_orig)
-    print(f"Generating augmented sentences for {len(df.index)} rows")
+    num_rows = len(df.index)
+    print(f"Generating augmented sentences for {num_rows} rows")
     num_new = 0
     for index, row in df.iterrows():
-        label = row['comment_id']
-        sentence = row['text']
-        aug_sentences = eda(sentence, alpha_sr=alpha_sr, alpha_ri=alpha_ri, alpha_rs=alpha_rs, p_rd=alpha_rd,
-                            num_aug=num_aug)
-        for aug_sentence in aug_sentences:
+        if index % 100 == 0:
+            print(f"Rows processed: {index} out of {num_rows}\r", end="")
+        worker = row['worker']
+        sentence_less_toxic = row['less_toxic']
+        sentence_more_toxic = row['more_toxic']
+        aug_less_toxic = eda(sentence_less_toxic, alpha_sr=alpha_sr, alpha_ri=alpha_ri, alpha_rs=alpha_rs,
+                             p_rd=alpha_rd,
+                             num_aug=num_aug)
+        aug_more_toxic = eda(sentence_more_toxic, alpha_sr=alpha_sr, alpha_ri=alpha_ri, alpha_rs=alpha_rs,
+                             p_rd=alpha_rd,
+                             num_aug=num_aug)
+        for aug_less, aug_more in zip(aug_less_toxic, aug_more_toxic):
             num_new += 1
-            writer.write(f"{label},{aug_sentence}\n")
+            writer.write(f"{worker},{aug_less},{aug_more}\n")
     writer.close()
-    print(f"Generated {num_new} sentences from {len(df.index)}")
+    print(f"Generated {num_new} sentences from {len(df.index)} rows")
     print(f"Augmented sentences with EDA for {train_orig} to {output_file} with num_aug={num_aug}")
 
 
