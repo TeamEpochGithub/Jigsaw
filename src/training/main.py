@@ -60,6 +60,7 @@ def main(data_path):
         # Inform Weights & Biases that this is one iteration
         run = wandb.init(
             project="Jigsaw",
+            entity="teamepoch-team1",
             config=CONFIG,
             job_type="Train",
             group=CONFIG["group"],
