@@ -4,12 +4,9 @@ import os
 from transformers import AdamW
 
 from data_loader import get_df
-from config import CONFIG, HASH_NAME
 from model import JigsawModel
 
 from train import JigsawTrainer
-
-DATA_PATH = "../input/jigsaw-toxic-severity-rating/validation_data.csv"
 
 # For colored terminal text
 from colorama import Fore, Back, Style
@@ -37,14 +34,23 @@ except:
     anony = "must"
     print("Unable to load Weight's and Biases")
 
-# Load and split the data
-df = get_df(DATA_PATH, CONFIG)
 
-
-def main():
+def main(data_path):
     """
         Setup and execute training of the model
     """
+
+    from config import CONFIG, HASH_NAME
+
+    # DATA_PATH = "../input/jigsaw-toxic-severity-rating/validation_data.csv"
+    DATA_PATH = data_path
+
+    CONFIG["dataset_name"] = data_path.split("/")[-1].split(".")[0]
+    print(f"### Now running with {CONFIG['dataset_name']} ###")
+    print("")
+
+    # Load and split the data
+    df = get_df(DATA_PATH, CONFIG)
 
     # Main trainig loop
     for fold in range(0, CONFIG["n_fold"]):
@@ -100,4 +106,19 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    dataset_folder = "../input/jigsaw-eda-1/"
+    datasets = [
+        "1111-2.csv",
+        "1111-4.csv",
+        "1111-9.csv",
+        "2222-2.csv",
+        "2222-4.csv",
+        "2222-9.csv",
+        "3333-2.csv",
+        "3333-4.csv",
+        "3333-9.csv",
+    ]
+
+    for file in datasets:
+
+        main(dataset_folder + file)

@@ -78,9 +78,7 @@ class JigsawTrainer:
             less_toxic_outputs = self.model(less_toxic_ids, less_toxic_mask)
 
             # Get loss from output + targets
-            loss = self.criterion(
-                more_toxic_outputs, less_toxic_outputs, targets, self.config
-            )
+            loss = self.criterion(more_toxic_outputs, less_toxic_outputs, targets)
 
             # Add loss to total loss, weighted by batch size
             running_loss += loss.item() * batch_size
@@ -214,7 +212,12 @@ class JigsawTrainer:
                 best_epoch_loss = val_epoch_loss
                 self.run.summary["Best Loss"] = best_epoch_loss
                 best_model_wts = copy.deepcopy(self.model.state_dict())
-                PATH = f"Loss-Fold-{fold}.bin"
+
+                if self.config["dataset_name"]:
+                    dataset_nm = self.config["dataset_name"]
+                    PATH = f"Loss-Fold-{fold}-{dataset_nm}.bin"
+                else:
+                    PATH = f"Loss-Fold-{fold}.bin"
                 torch.save(self.model.state_dict(), PATH)
                 # Save a model file from the current directory
                 print(f"Model Saved{sr_}")

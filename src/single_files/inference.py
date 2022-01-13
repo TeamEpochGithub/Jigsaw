@@ -40,6 +40,10 @@ with __stickytape_temporary_dir() as __stickytape_working_dir:
     __stickytape_sys.path.insert(0, __stickytape_working_dir)
 
     __stickytape_write_module(
+        "model.py",
+        b'import torch.nn as nn\nfrom transformers import AutoModel\n\n\nclass JigsawModel(nn.Module):\n    def __init__(self, model_name, config):\n        super(JigsawModel, self).__init__()\n        self.model = AutoModel.from_pretrained(model_name)\n        self.drop = nn.Dropout(p=0.2)\n        self.fc = nn.Linear(768, config["num_classes"])\n\n    def forward(self, ids, mask):\n        out = self.model(input_ids=ids, attention_mask=mask, output_hidden_states=False)\n        out = self.drop(out[1])\n        outputs = self.fc(out)\n        return outputs\n',
+    )
+    __stickytape_write_module(
         "data.py",
         b'import torch\nfrom torch.utils.data import Dataset\n\n\nclass JigsawDataset(Dataset):\n    """\n    A class to be passed to a dataloader.\n    """\n\n    def __init__(self, df, tokenizer, max_length):\n        self.df = df\n        self.max_len = max_length\n        self.tokenizer = tokenizer\n        self.text = df["text"].values\n\n    def __len__(self):\n        return len(self.df)\n\n    def __getitem__(self, index):\n        text = self.text[index]\n        inputs = self.tokenizer.encode_plus(\n            text,\n            truncation=True,\n            add_special_tokens=True,\n            max_length=self.max_len,\n            padding="max_length",\n        )\n\n        # tokens, extracted from sentences\n        ids = inputs["input_ids"]\n        # same length as tokens, 1 if the token is actual, 0 if it is a placeholder to fill max_length\n        mask = inputs["attention_mask"]\n\n        return {\n            "ids": torch.tensor(ids, dtype=torch.long),\n            "mask": torch.tensor(mask, dtype=torch.long),\n        }\n',
     )
@@ -58,7 +62,7 @@ with __stickytape_temporary_dir() as __stickytape_working_dir:
 
     from tqdm import tqdm
 
-    from training.model import JigsawModel
+    from model import JigsawModel
     from data import JigsawDataset
     from config import CONFIG
     from typing import List
@@ -67,11 +71,11 @@ with __stickytape_temporary_dir() as __stickytape_working_dir:
 
     # models that will be ensembled
     MODEL_PATHS = [
-        "../input/pytorch-jigsaw-starter/Loss-Fold-0.bin",
-        "../input/pytorch-jigsaw-starter/Loss-Fold-1.bin",
-        "../input/pytorch-jigsaw-starter/Loss-Fold-2.bin",
-        "../input/pytorch-jigsaw-starter/Loss-Fold-3.bin",
-        "../input/pytorch-jigsaw-starter/Loss-Fold-4.bin",
+        "../input/pytorchjigsawstarter/Loss-Fold-0.bin",
+        "../input/pytorchjigsawstarter/Loss-Fold-1.bin",
+        "../input/pytorchjigsawstarter/Loss-Fold-2.bin",
+        "../input/pytorchjigsawstarter/Loss-Fold-3.bin",
+        "../input/pytorchjigsawstarter/Loss-Fold-4.bin",
     ]
 
     DATA_PATH = "../input/jigsaw-toxic-severity-rating/comments_to_score.csv"
