@@ -16,13 +16,15 @@ from typing import List
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
+COMMON_PATH = '../input/pytorchjigsawstarter/'
+
 # models that will be ensembled
 MODEL_PATHS = [
-    "../input/pytorchjigsawstarter/Loss-Fold-0.bin",
-    "../input/pytorchjigsawstarter/Loss-Fold-1.bin",
-    "../input/pytorchjigsawstarter/Loss-Fold-2.bin",
-    "../input/pytorchjigsawstarter/Loss-Fold-3.bin",
-    "../input/pytorchjigsawstarter/Loss-Fold-4.bin",
+    COMMON_PATH + "Loss-Fold-0.bin",
+    COMMON_PATH + "Loss-Fold-1.bin",
+    COMMON_PATH + "Loss-Fold-2.bin",
+    COMMON_PATH + "Loss-Fold-3.bin",
+    COMMON_PATH + "Loss-Fold-4.bin",
 ]
 
 DATA_PATH = "../input/jigsaw-toxic-severity-rating/comments_to_score.csv"
@@ -38,23 +40,21 @@ def predict(model: torch.nn.Module, dataloader, device):
     :return:
     """
     model.eval()
-    preds = np.array(len(dataloader), dtype=np.float_)
+    predictions = []
 
     bar = tqdm(enumerate(dataloader), total=len(dataloader))
-    for i, data in bar:
-        # get tokenizer output
-        ids = data["ids"].to(device, dtype=torch.long)
-        mask = data["mask"].to(device, dtype=torch.long)
+    for step, data in bar:
+        ids = data['ids'].to(device, dtype=torch.long)
+        mask = data['mask'].to(device, dtype=torch.long)
 
-        # predict on tokens
         outputs = model(ids, mask)
-        preds[i] = outputs.view(-1).cpu().detach().numpy()
+        predictions.append(outputs.view(-1).cpu().detach().numpy())
 
-    preds = np.concatenate(preds)
+    predictions = np.concatenate(predictions)
     # collect garbage
     gc.collect()
 
-    return preds
+    return predictions
 
 
 def inference(model_paths: List[str], dataloader: torch.utils.data.DataLoader, device):
@@ -68,7 +68,7 @@ def inference(model_paths: List[str], dataloader: torch.utils.data.DataLoader, d
     final_predictions = []
     for i, path in enumerate(model_paths):
         # initialize model
-        model = JigsawModel(CONFIG["model_name"], CONFIG)
+        model = JigsawModel(CONFIG["model_name"], CONFIG["num_classes"])
         model.to(CONFIG["device"])
         if torch.cuda.is_available():
             model.load_state_dict(torch.load(path))
