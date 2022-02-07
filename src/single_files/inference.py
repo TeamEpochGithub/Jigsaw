@@ -40,8 +40,12 @@ with __stickytape_temporary_dir() as __stickytape_working_dir:
     __stickytape_sys.path.insert(0, __stickytape_working_dir)
 
     __stickytape_write_module(
+        "model.py",
+        b'import torch.nn as nn\nfrom transformers import AutoModel\n\n\nclass JigsawModel(nn.Module):\n    """\n        A wrapper around the model being used\n    """\n\n    def __init__(self, model_name, num_classes):\n\n        # Create the model\n        super(JigsawModel, self).__init__()\n        self.model = AutoModel.from_pretrained(model_name)\n\n        # Add a dropout layer\n        self.drop = nn.Dropout(p=0.2)\n\n        # Add a linear output layer\n        self.fc = nn.Linear(768, num_classes)\n\n        # self.relu = nn.ReLU()\n        # self.largeFC = nn.Linear(768, 768)\n\n    def forward(self, ids, mask):\n        """\n            Perform a forward feed\n            :param ids: The input\n            :param mask: The attention mask\n        """\n        out = self.model(input_ids=ids, attention_mask=mask, output_hidden_states=False)\n        out = self.drop(out[1])\n        # out = self.largeFC(out)\n        # out = self.relu(out)\n        outputs = self.fc(out)\n        return outputs\n',
+    )
+    __stickytape_write_module(
         "data.py",
-        b'import torch\nfrom torch.utils.data import Dataset\n\n\nclass JigsawDataset(Dataset):\n    """\n    A class to be passed to a dataloader.\n    """\n\n    def __init__(self, df, tokenizer, max_length):\n        self.df = df\n        self.max_len = max_length\n        self.tokenizer = tokenizer\n        self.text = df["text"].values\n\n    def __len__(self):\n        return len(self.df)\n\n    def __getitem__(self, index):\n        text = self.text[index]\n        inputs = self.tokenizer.encode_plus(\n            text,\n            truncation=True,\n            add_special_tokens=True,\n            max_length=self.max_len,\n            padding="max_length",\n        )\n\n        # tokens, extracted from sentences\n        ids = inputs["input_ids"]\n        # same length as tokens, 1 if the token is actual, 0 if it is a placeholder to fill max_length\n        mask = inputs["attention_mask"]\n\n        return {\n            "ids": torch.tensor(ids, dtype=torch.long),\n            "mask": torch.tensor(mask, dtype=torch.long),\n        }\n',
+        b'import re\nfrom bs4 import BeautifulSoup\nimport torch\nfrom torch.utils.data import Dataset\n\n\ndef text_cleaning(text):\n    \'\'\'\n    Cleans text into a basic form for NLP. Operations include the following:-\n    1. Remove special charecters like &, #, etc\n    2. Removes extra spaces\n    3. Removes embedded URL links\n    4. Removes HTML tags\n    5. Removes emojis\n\n    text - Text piece to be cleaned.\n    \'\'\'\n    template = re.compile(r\'https?://\\S+|www\\.\\S+\')  # Removes website links\n    text = template.sub(r\'\', text)\n\n    soup = BeautifulSoup(text, \'lxml\')  # Removes HTML tags\n    only_text = soup.get_text()\n    text = only_text\n\n    emoji_pattern = re.compile("["\n                               u"\\U0001F600-\\U0001F64F"  # emoticons\n                               u"\\U0001F300-\\U0001F5FF"  # symbols & pictographs\n                               u"\\U0001F680-\\U0001F6FF"  # transport & map symbols\n                               u"\\U0001F1E0-\\U0001F1FF"  # flags (iOS)\n                               u"\\U00002702-\\U000027B0"\n                               u"\\U000024C2-\\U0001F251"\n                               "]+", flags=re.UNICODE)\n    text = emoji_pattern.sub(r\'\', text)\n\n    text = re.sub(r"[^a-zA-Z\\d]", " ", text)  # Remove special Charecters\n    text = re.sub(\' +\', \' \', text)  # Remove Extra Spaces\n    text = text.strip()  # remove spaces at the beginning and at the end of string\n\n    return text\n\n\nclass JigsawDataset(Dataset):\n    """\n    A class to be passed to a dataloader.\n    """\n\n    def __init__(self, df, tokenizer, max_length):\n        self.df = df\n        self.max_len = max_length\n        self.tokenizer = tokenizer\n        self.text = df["text"].values\n\n    def __len__(self):\n        return len(self.df)\n\n    def __getitem__(self, index):\n        text = text_cleaning(self.text[index])\n        inputs = self.tokenizer.encode_plus(\n            text,\n            truncation=True,\n            add_special_tokens=True,\n            max_length=self.max_len,\n            padding="max_length",\n        )\n\n        # tokens, extracted from sentences\n        ids = inputs["input_ids"]\n        # same length as tokens, 1 if the token is actual, 0 if it is a placeholder to fill max_length\n        mask = inputs["attention_mask"]\n\n        return {\n            "ids": torch.tensor(ids, dtype=torch.long),\n            "mask": torch.tensor(mask, dtype=torch.long),\n        }\n',
     )
     __stickytape_write_module(
         "config.py",
@@ -58,20 +62,22 @@ with __stickytape_temporary_dir() as __stickytape_working_dir:
 
     from tqdm import tqdm
 
-    from training.model import JigsawModel
+    from model import JigsawModel
     from data import JigsawDataset
     from config import CONFIG
     from typing import List
 
     os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
+    COMMON_PATH = "../input/pytorchjigsawstarter/"
+
     # models that will be ensembled
     MODEL_PATHS = [
-        "../input/pytorch-jigsaw-starter/Loss-Fold-0.bin",
-        "../input/pytorch-jigsaw-starter/Loss-Fold-1.bin",
-        "../input/pytorch-jigsaw-starter/Loss-Fold-2.bin",
-        "../input/pytorch-jigsaw-starter/Loss-Fold-3.bin",
-        "../input/pytorch-jigsaw-starter/Loss-Fold-4.bin",
+        COMMON_PATH + "Loss-Fold-0.bin",
+        COMMON_PATH + "Loss-Fold-1.bin",
+        COMMON_PATH + "Loss-Fold-2.bin",
+        COMMON_PATH + "Loss-Fold-3.bin",
+        COMMON_PATH + "Loss-Fold-4.bin",
     ]
 
     DATA_PATH = "../input/jigsaw-toxic-severity-rating/comments_to_score.csv"
@@ -86,23 +92,21 @@ with __stickytape_temporary_dir() as __stickytape_working_dir:
         :return:
         """
         model.eval()
-        preds = np.array(len(dataloader), dtype=np.float_)
+        predictions = []
 
         bar = tqdm(enumerate(dataloader), total=len(dataloader))
-        for i, data in bar:
-            # get tokenizer output
+        for step, data in bar:
             ids = data["ids"].to(device, dtype=torch.long)
             mask = data["mask"].to(device, dtype=torch.long)
 
-            # predict on tokens
             outputs = model(ids, mask)
-            preds[i] = outputs.view(-1).cpu().detach().numpy()
+            predictions.append(outputs.view(-1).cpu().detach().numpy())
 
-        preds = np.concatenate(preds)
+        predictions = np.concatenate(predictions)
         # collect garbage
         gc.collect()
 
-        return preds
+        return predictions
 
     def inference(
         model_paths: List[str], dataloader: torch.utils.data.DataLoader, device
@@ -117,7 +121,7 @@ with __stickytape_temporary_dir() as __stickytape_working_dir:
         final_predictions = []
         for i, path in enumerate(model_paths):
             # initialize model
-            model = JigsawModel(CONFIG["model_name"], CONFIG)
+            model = JigsawModel(CONFIG["model_name"], CONFIG["num_classes"])
             model.to(CONFIG["device"])
             if torch.cuda.is_available():
                 model.load_state_dict(torch.load(path))

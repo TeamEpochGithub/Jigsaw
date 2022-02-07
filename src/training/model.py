@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from transformers import AutoModel
 
@@ -17,9 +18,9 @@ class JigsawModel(nn.Module):
         self.drop = nn.Dropout(p=0.2)
 
         # Add a linear output layer
-        self.fc = nn.Linear(768, num_classes)
+        self.fc = nn.Linear(768 + 1, num_classes)  # 1 for punctuation flag
 
-    def forward(self, ids, mask):
+    def forward(self, ids, mask, punct):
         """
             Perform a forward feed
             :param ids: The input
@@ -27,5 +28,6 @@ class JigsawModel(nn.Module):
         """
         out = self.model(input_ids=ids, attention_mask=mask, output_hidden_states=False)
         out = self.drop(out[1])
+        out = torch.cat((out, punct), 1)
         outputs = self.fc(out)
         return outputs

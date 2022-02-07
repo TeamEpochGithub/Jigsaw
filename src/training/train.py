@@ -67,20 +67,28 @@ class JigsawTrainer:
             # Send relevant data to processing device
             more_toxic_ids = data["more_toxic_ids"].to(self.device, dtype=torch.long)
             more_toxic_mask = data["more_toxic_mask"].to(self.device, dtype=torch.long)
+            more_toxic_punctuation = data["more_toxic_wierd_punctuation"].to(
+                self.device, dtype=torch.long
+            )
             less_toxic_ids = data["less_toxic_ids"].to(self.device, dtype=torch.long)
             less_toxic_mask = data["less_toxic_mask"].to(self.device, dtype=torch.long)
+            less_toxic_punctuation = data["less_toxic_wierd_punctuation"].to(
+                self.device, dtype=torch.long
+            )
             targets = data["target"].to(self.device, dtype=torch.long)
 
             batch_size = more_toxic_ids.size(0)
 
             # Get result of more/less toxic input
-            more_toxic_outputs = self.model(more_toxic_ids, more_toxic_mask)
-            less_toxic_outputs = self.model(less_toxic_ids, less_toxic_mask)
+            more_toxic_outputs = self.model(
+                more_toxic_ids, more_toxic_mask, more_toxic_punctuation
+            )
+            less_toxic_outputs = self.model(
+                less_toxic_ids, less_toxic_mask, less_toxic_punctuation
+            )
 
             # Get loss from output + targets
-            loss = self.criterion(
-                more_toxic_outputs, less_toxic_outputs, targets, self.config
-            )
+            loss = self.criterion(more_toxic_outputs, less_toxic_outputs, targets)
 
             # Add loss to total loss, weighted by batch size
             running_loss += loss.item() * batch_size
@@ -112,15 +120,25 @@ class JigsawTrainer:
             # Send relevant data to processing device
             more_toxic_ids = data["more_toxic_ids"].to(self.device, dtype=torch.long)
             more_toxic_mask = data["more_toxic_mask"].to(self.device, dtype=torch.long)
+            more_toxic_punctuation = data["more_toxic_wierd_punctuation"].to(
+                self.device, dtype=torch.long
+            )
             less_toxic_ids = data["less_toxic_ids"].to(self.device, dtype=torch.long)
             less_toxic_mask = data["less_toxic_mask"].to(self.device, dtype=torch.long)
+            less_toxic_punctuation = data["less_toxic_wierd_punctuation"].to(
+                self.device, dtype=torch.long
+            )
             targets = data["target"].to(self.device, dtype=torch.long)
 
             batch_size = more_toxic_ids.size(0)
 
             # Get result of more/less toxic input
-            more_toxic_outputs = self.model(more_toxic_ids, more_toxic_mask)
-            less_toxic_outputs = self.model(less_toxic_ids, less_toxic_mask)
+            more_toxic_outputs = self.model(
+                more_toxic_ids, more_toxic_mask, more_toxic_punctuation
+            )
+            less_toxic_outputs = self.model(
+                less_toxic_ids, less_toxic_mask, less_toxic_punctuation
+            )
 
             # Get loss from output + targets
             loss = self.criterion(more_toxic_outputs, less_toxic_outputs, targets)

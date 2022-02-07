@@ -1,3 +1,5 @@
+import re
+from bs4 import BeautifulSoup
 import pandas as pd
 
 import torch
@@ -28,6 +30,47 @@ def get_df(path, config):
     return df
 
 
+def text_cleaning(text):
+    """
+    Cleans text into a basic form for NLP. Operations include the following:-
+    1. Remove special charecters like &, #, etc
+    2. Removes extra spaces
+    3. Removes embedded URL links
+    4. Removes HTML tags
+    5. Removes emojis
+
+    text - Text piece to be cleaned.
+    """
+    template = re.compile(r"https?://\S+|www\.\S+")  # Removes website links
+    text = template.sub(r"", text)
+
+    soup = BeautifulSoup(text, "lxml")  # Removes HTML tags
+    only_text = soup.get_text()
+    text = only_text
+
+    emoji_pattern = re.compile(
+        "["
+        u"\U0001F600-\U0001F64F"  # emoticons
+        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+        u"\U0001F680-\U0001F6FF"  # transport & map symbols
+        u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+        u"\U00002702-\U000027B0"
+        u"\U000024C2-\U0001F251"
+        "]+",
+        flags=re.UNICODE,
+    )
+    text = emoji_pattern.sub(r"", text)
+    text = text.strip()  # remove spaces at the beginning and at the end of string
+
+    return text
+
+
+def has_wierd_punctuation(text):
+    if "!!" in text or "??" in text or "?!" in text or "!?" in text:
+        return 1
+    return 0
+
+
 class JigsawDataset(Dataset):
     """
         A wrapper around the pandas dataframe containing the data
@@ -44,8 +87,10 @@ class JigsawDataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, index):
-        more_toxic = self.more_toxic[index]
-        less_toxic = self.less_toxic[index]
+        more_toxic = text_cleaning(self.more_toxic[index])
+        less_toxic = text_cleaning(self.less_toxic[index])
+        more_toxic_punct = has_wierd_punctuation(more_toxic)
+        less_toxic_punct = has_wierd_punctuation(less_toxic)
         inputs_more_toxic = self.tokenizer.encode_plus(
             more_toxic,
             truncation=True,
@@ -73,5 +118,11 @@ class JigsawDataset(Dataset):
             "more_toxic_mask": torch.tensor(more_toxic_mask, dtype=torch.long),
             "less_toxic_ids": torch.tensor(less_toxic_ids, dtype=torch.long),
             "less_toxic_mask": torch.tensor(less_toxic_mask, dtype=torch.long),
+            "more_toxic_wierd_punctuation": torch.tensor(
+                more_toxic_punct, dtype=torch.long
+            ),
+            "less_toxic_wierd_punctuation": torch.tensor(
+                less_toxic_punct, dtype=torch.long
+            ),
             "target": torch.tensor(target, dtype=torch.long),
         }

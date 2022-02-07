@@ -14,6 +14,7 @@ colorama = "*"
 pre-commit = "*"
 wandb = "*"
 stickytape = "*"
+beautifulsoup4 = "*"
 
 [dev-packages]
 
